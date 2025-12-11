@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Easy Tender CRM — Pro (Telecalling)</title>
+<style>
+:root{--primary:#0066ff;--accent:#00b4d8;--bg:#f4f6f9;--card:#fff}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:#082032}
+header{height:64px;background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;padding:0 18px;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{height:44px;border-radius:8px;background:#fff;padding:6px}
+.app-title{font-weight:700}
+.layout{display:flex;min-height:calc(100vh - 64px)}
+.sidebar{width:240px;padding:14px;background:#05386b;color:#fff;display:flex;flex-direction:column}
+.menu-btn{background:transparent;border:none;color:inherit;text-align:left;padding:10px;border-radius:6px;margin-bottom:6px;cursor:pointer;font-weight:600}
+.menu-btn.active{background:rgba(255,255,255,0.06)}
+.main{flex:1;padding:18px}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(12,24,36,0.06);margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.kpi{padding:12px;border-radius:8px;background:linear-gradient(180deg,#fff,#f7fbff);text-align:center}
+.kpi .num{font-size:20px;font-weight:700;color:var(--primary)}
+.form-row{display:flex;gap:8px;margin-bottom:8px}
+.form-row .col{flex:1}
+input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #ddd}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:8px;overflow:hidden}
+th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+th{background:#f6fbff;color:var(--primary);font-weight:700}
+.tag{padding:6px 8px;border-radius:6px;color:#fff;font-weight:700;display:inline-block;font-size:13px}
+.today{background:#28a745}.future{background:#17a2b8}.registered{background:#ffc107;color:#000}.noti{background:#dc3545}
+.actions button{margin-right:6px;padding:6px 8px;border-radius:6px;border:none;cursor:pointer}
+.actions .edit{background:#00b4d8;color:#fff}.actions .del{background:#ff5252;color:#fff}.actions .quick{background:#0066ff;color:#fff}
+.small{font-size:13px;color:#666}
+.right{margin-left:auto}
+.footer{padding:12px;text-align:center;color:#666;font-size:13px}
+.modal{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);z-index:999}
+.modal .box{width:920px;max-width:96%;background:#fff;padding:12px;border-radius:8px;max-height:90vh;overflow:auto}
+.row{display:flex;gap:8px}
+.btn{background:var(--primary);color:#fff;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
+.link{color:var(--primary);text-decoration:none}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.sidebar{width:72px}.menu-btn{font-size:11px;padding:8px}}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.sidebar{display:none}.main{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <img src="LOGO.jpg" class="logo" alt="Logo"/>
+    <div>
+      <div class="app-title">Easy Tender CRM</div>
+      <div class="small">Telecalling — Standard</div>
+    </div>
+  </div>
+  <div id="hdrRight" class="small"></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <button class="menu-btn active" data-page="dashboard" onclick="navigate(event)">Dashboard</button>
+    <button class="menu-btn" data-page="today" onclick="navigate(event)">Today Follow-up</button>
+    <button class="menu-btn" data-page="future" onclick="navigate(event)">Future Follow-up</button>
+    <button class="menu-btn" data-page="registered" onclick="navigate(event)">Registered</button>
+    <button class="menu-btn" data-page="noti" onclick="navigate(event)">Not Interested</button>
+    <div style="margin-top:12px">
+      <button class="menu-btn" data-page="add" onclick="navigate(event)">Add Client</button>
+      <button class="menu-btn" data-page="import" onclick="navigate(event)">Import / Export</button>
+      <button class="menu-btn" data-page="staff" onclick="navigate(event)">Staff (Admin)</button>
+    </div>
+    <div style="margin-top:auto;font-size:13px;opacity:0.9">Support: support@easytender.com<br/>+91-98765-43210</div>
+  </aside>
+
+  <main class="main">
+    <div class="controls">
+      <input id="search" placeholder="Search name or mobile..." style="flex:1;padding:8px;border-radius:6px;border:1px solid #ddd"/>
+      <select id="filterStaff" style="width:220px"><option value="">All Staff</option></select>
+      <button id="logoutBtn" class="btn">Logout</button>
+    </div>
+
+    <!-- Dashboard view -->
+    <div id="page_dashboard" class="page">
+      <div class="grid card" id="kpis">
+        <div class="kpi"><div class="num" id="k_total">0</div><div class="small">Total Clients</div></div>
+        <div class="kpi"><div class="num" id="k_today">0</div><div class="small">Today Follow-ups</div></div>
+        <div class="kpi"><div class="num" id="k_future">0</div><div class="small">Future Follow-ups</div></div>
+        <div class="kpi"><div class="num" id="k_registered">0</div><div class="small">Registered</div></div>
+      </div>
+
+      <div class="card">
+        <h3>Quick Add Client</h3>
+        <div class="row" style="margin-bottom:8px">
+          <input id="q_name" placeholder="Name" style="flex:2;padding:8px"/>
+          <input id="q_mobile" placeholder="Mobile" style="flex:1;padding:8px"/>
+          <select id="q_status" style="padding:8px"><option value="today">Today</option><option value="future">Future</option><option value="registered">Registered</option><option value="noti">Not Interested</option></select>
+          <button id="q_save" class="btn">Add</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Recent Activity</h3>
+        <div id="recentList" class="small">No recent actions yet.</div>
+      </div>
+    </div>
+
+    <!-- List pages -->
+    <div id="page_list" class="page hidden">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px">
+          <h3 id="listTitle">Clients</h3>
+          <div class="right small" id="listCount"></div>
+        </div>
+        <div style="overflow:auto;margin-top:8px">
+          <table id="clientsTable">
+            <thead><tr><th>Name</th><th>Company</th><th>Mobile</th><th>City</th><th>State</th><th>Follow-up</th><th>Status</th><th>Assigned</th><th>Actions</th></tr></thead>
+            <tbody id="clientsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Edit page -->
+    <div id="page_add" class="page hidden">
+      <div class="card">
+        <h3 id="addTitle">Add Client</h3>
+        <div class="form-row">
+          <div class="col"><input id="name" placeholder="Client Name"/></div>
+          <div class="col"><input id="company" placeholder="Company"/></div>
+        </div>
+        <div class="form-row">
+          <div class="col"><input id="mobile" placeholder="Mobile"/></div>
+          <div class="col"><input id="city" placeholder="City"/></div>
+        </div>
+        <div class="form-row">
+          <div class="col"><input id="state" placeholder="State"/></div>
+          <div class="col"><input id="follow" type="date"/></div>
+        </div>
+        <div style="margin-bottom:8px">
+          <textarea id="note" placeholder="Initial remark / note" style="width:100%;min-height:80px"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="statusSelect"><option value="today">Today Follow-up</option><option value="future">Future Follow-up</option><option value="registered">Registered</option><option value="noti">Not Interested</option></select>
+          <select id="assignSelect" style="min-width:180px"><option value="">Assign to staff (optional)</option></select>
+          <button id="saveBtn" class="btn">Save Client</button>
+          <button id="clearBtn" class="btn" style="background:#777">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import/Export page -->
+    <div id="page_import" class="page hidden">
+      <div class="card">
+        <h3>Import / Export</h3>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <input type="file" id="csvIn"/>
+          <button id="importBtn" class="btn">Import CSV</button>
+          <button id="exportAll" class="btn">Export All CSV</button>
+          <button id="exportToday" class="btn">Export Today</button>
+        </div>
+        <div class="small">CSV format: Name,Company,Mobile,City,State,FollowDate,Status,Remark</div>
+      </div>
+    </div>
+
+    <!-- Staff management (admin) -->
+    <div id="page_staff" class="page hidden">
+      <div class="card">
+        <h3>Staff Management (Admin)</h3>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="staffEmail" placeholder="staff email"/>
+          <input id="staffPass" placeholder="password"/>
+          <button id="createStaff" class="btn">Create Staff (Invite)</button>
+        </div>
+        <div class="card"><h4>Staff List</h4><div id="staffList"></div></div>
+      </div>
+    </div>
+
+    <div class="footer card">Easy Tender CRM • Telecalling Standard</div>
+
+  </main>
+</div>
+
+<!-- Modal detail -->
+<div id="modal" class="modal hidden"><div class="box">
+  <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+    <h3 id="modalName">Client</h3>
+    <div><button class="btn" onclick="closeModal()">Close</button></div>
+  </div>
+  <div id="modalBody"></div>
+</div></div>
+
+<!-- Firebase and app script -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, query, where, orderBy, onSnapshot, updateDoc, deleteDoc, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// --- YOUR FIREBASE CONFIG ---
+const firebaseConfig = {
+  apiKey: "AIzaSyD9HvxCQD9LoUMpdH6Ne6Ujna5wKFx75aM",
+  authDomain: "easy-tender-crm.firebaseapp.com",
+  projectId: "easy-tender-crm",
+  storageBucket: "easy-tender-crm.firebasestorage.app",
+  messagingSenderId: "405693483846",
+  appId: "1:405693483846:web:5e38afb1fdf40da7baf347"
+};
+
+const adminEmail = "easytender2025@gmail.com"; // auto-admin
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// UI refs
+const hdrRight = document.getElementById('hdrRight');
+const search = document.getElementById('search');
+const filterStaff = document.getElementById('filterStaff');
+const logoutBtn = document.getElementById('logoutBtn');
+const q_name = document.getElementById('q_name');
+const q_mobile = document.getElementById('q_mobile');
+const q_status = document.getElementById('q_status');
+const q_save = document.getElementById('q_save');
+const recentList = document.getElementById('recentList');
+
+const clientsBody = document.getElementById('clientsBody');
+const listCount = document.getElementById('listCount');
+const listTitle = document.getElementById('listTitle');
+
+const saveBtn = document.getElementById('saveBtn');
+const clearBtn = document.getElementById('clearBtn');
+const nameEl = document.getElementById('name');
+const companyEl = document.getElementById('company');
+const mobileEl = document.getElementById('mobile');
+const cityEl = document.getElementById('city');
+const stateEl = document.getElementById('state');
+const followEl = document.getElementById('follow');
+const noteEl = document.getElementById('note');
+const statusSelect = document.getElementById('statusSelect');
+const assignSelect = document.getElementById('assignSelect');
+const csvIn = document.getElementById('csvIn');
+const importBtn = document.getElementById('importBtn');
+const exportAll = document.getElementById('exportAll');
+const exportToday = document.getElementById('exportToday');
+const staffList = document.getElementById('staffList');
+const createStaff = document.getElementById('createStaff');
+const staffEmail = document.getElementById('staffEmail');
+const staffPass = document.getElementById('staffPass');
+
+// modal
+const modal = document.getElementById('modal');
+const modalName = document.getElementById('modalName');
+const modalBody = document.getElementById('modalBody');
+
+// pages
+const pages = ['dashboard','today','future','registered','noti','add','import','staff'];
+let currentUser = null;
+let currentRole = 'staff';
+let currentPage = 'dashboard';
+let unsub = null;
+let editingId = null;
+
+// helper show/hide
+function showPageId(id){ pages.forEach(p=>{ const el = document.getElementById('page_'+p); if(el) el.classList.add('hidden'); }); const el = document.getElementById('page_'+id); if(el) el.classList.remove('hidden'); }
+function navigate(e){ const btn = e.currentTarget; document.querySelectorAll('.menu-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); const page = btn.dataset.page; currentPage = page; if(page==='add'){ showPageId('add'); fillAssigns(); } else if(page==='staff'){ showPageId('staff'); loadStaffs(); } else if(page==='import'){ showPageId('import'); } else { showPageId('list'); loadList(page); } }
+
+// initial UI
+showPageId('dashboard');
+
+// Auth UI (very simple)
+const loginScreen = document.createElement('div');
+loginScreen.style.display='none';
+// we will use a basic popup for login on first use via auth methods below
+document.getElementById('logoutBtn').addEventListener('click', ()=> signOut(auth));
+
+// login/signup handled via popup inputs in header (quick)
+async function doLoginPrompt(){ const em = prompt('Enter email'); if(!em) return; const pw = prompt('Enter password'); if(!pw) return; try{ await signInWithEmailAndPassword(auth,em,pw); }catch(e){ if(e.code && e.code.includes('user-not-found')){ if(confirm('User not found. Create new?')){ try{ await createUserWithEmailAndPassword(auth,em,pw); alert('User created. Please login again.'); }catch(err){ alert(err.message); } } } else alert(e.message); } }
+
+hdrRight.innerHTML = '<button class="btn" onclick="doLoginPrompt()">Login / Signup</button>';
+
+// auth state
+onAuthStateChanged(auth, async user=>{
+  if(user){
+    currentUser = user;
+    currentRole = (user.email===adminEmail)?'admin':'staff';
+    hdrRight.innerHTML = `<div style="text-align:right"><div style="font-weight:700">${user.email}</div><div class="small">${currentRole}</div></div>`;
+    // populate staff filter and assignments
+    await fillAssigns();
+    loadKpis();
+    if(currentPage && currentPage!=='add' && currentPage!=='import' && currentPage!=='staff') loadList(currentPage);
+  } else {
+    currentUser = null;
+    currentRole = 'staff';
+    hdrRight.innerHTML = '<button class="btn" onclick="doLoginPrompt()">Login / Signup</button>';
+    showPageId('dashboard');
+  }
+});
+
+// fill assigns/staff dropdowns
+async function fillAssigns(){
+  filterStaff.innerHTML = '<option value="">All Staff</option>';
+  assignSelect.innerHTML = '<option value="">Assign to staff (optional)</option>';
+  staffList.innerHTML = '';
+  const snap = await getDocs(collection(db,'users'));
+  snap.docs.forEach(d=>{
+    const u = d.data();
+    const opt = document.createElement('option'); opt.value = u.uid; opt.textContent = u.email; filterStaff.appendChild(opt);
+    const opt2 = document.createElement('option'); opt2.value = u.uid; opt2.textContent = u.email; assignSelect.appendChild(opt2);
+    // staff list UI
+    const div = document.createElement('div'); div.textContent = `${u.email} — ${u.role||'staff'}`; staffList.appendChild(div);
+  });
+}
+
+// KPI loader
+async function loadKpis(){
+  const col = collection(db,'clients');
+  const snap = await getDocs(query(col, orderBy('createdAt','desc'), limit(1000)));
+  const items = snap.docs.map(d=>d.data());
+  const total = items.length;
+  const today = items.filter(i=>i.status==='today').length;
+  const future = items.filter(i=>i.status==='future').length;
+  const reg = items.filter(i=>i.status==='registered').length;
+  document.getElementById('k_total').innerText = total;
+  document.getElementById('k_today').innerText = today;
+  document.getElementById('k_future').innerText = future;
+  document.getElementById('k_registered').innerText = reg;
+}
+
+// Recent activity (last 10 history entries)
+async function loadRecent(){
+  const snap = await getDocs(query(collection(db,'clients'), orderBy('createdAt','desc'), limit(10)));
+  const lines = snap.docs.map(d=>{ const it = d.data(); return `<div class="small">${it.name||'-'} — ${it.status||''} — ${(it.createdAt && it.createdAt.toDate)?it.createdAt.toDate().toLocaleString():''}</div>`; });
+  recentList.innerHTML = lines.join('') || 'No recent activity';
+}
+
+// load list for page
+function createStatusTag(s){ return `<span class="tag ${s}">${s}</span>`; }
+
+function renderRow(docItem){
+  const id = docItem.id;
+  const assignedEmail = docItem.assignedToEmail || '';
+  return `
+    <tr>
+      <td><strong>${escapeHtml(docItem.name||'')}</strong><div class="small">${escapeHtml(docItem.company||'')}</div></td>
+      <td>${escapeHtml(docItem.company||'')}</td>
+      <td><a class="link" href="tel:${escapeHtml(docItem.mobile||'')}">${escapeHtml(docItem.mobile||'')}</a></td>
+      <td>${escapeHtml(docItem.city||'')}</td>
+      <td>${escapeHtml(docItem.state||'')}</td>
+      <td>${docItem.date||''}</td>
+      <td>${createStatusTag(docItem.status||'')}</td>
+      <td>${escapeHtml(assignedEmail)}</td>
+      <td class="actions">
+        <button class="action edit" onclick="openDetail('${id}')">View</button>
+        <button class="action quick" onclick="quickStatus('${id}','today')">Today</button>
+        <button class="action quick" onclick="quickStatus('${id}','future')">Future</button>
+        <button class="action quick" onclick="quickStatus('${id}','registered')">Reg</button>
+        <button class="action del" onclick="removeClient('${id}')">Delete</button>
+      </td>
+    </tr>
+  `;
+}
+
+async function loadList(page){
+  if(unsub) unsub(); clientsBody.innerHTML = '<tr><td colspan="9">Loading...</td></tr>';
+  let q;
+  const col = collection(db,'clients');
+  if(page==='dashboard'){
+    // all
+    q = query(col, orderBy('createdAt','desc'));
+    listTitle.innerText = 'All Clients';
+  } else if(page==='today' || page==='future' || page==='registered' || page==='noti'){
+    q = query(col, where('status','==', page), orderBy('createdAt','desc'));
+    listTitle.innerText = page==='today'?'Today Follow-up':page==='future'?'Future Follow-up':page==='registered'?'Registered':'Not Interested';
+  } else {
+    q = query(col, orderBy('createdAt','desc'));
+    listTitle.innerText = 'All Clients';
+  }
+  unsub = onSnapshot(q,(snap)=>{
+    const docs = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    // filter by staff if chosen
+    const f = filterStaff.value;
+    const filtered = f ? docs.filter(x=>x.assignedTo===f) : docs;
+    clientsBody.innerHTML = filtered.map(renderRow).join('') || '<tr><td colspan="9">No records</td></tr>';
+    listCount.innerText = filtered.length ? `${filtered.length} results` : '';
+    loadKpis(); loadRecent();
+  });
+}
+
+// open detail modal
+async function openDetail(id){
+  const d = await getDoc(doc(db,'clients',id));
+  if(!d.exists()) return alert('Not found');
+  const obj = d.data();
+  modalName.innerText = obj.name || 'Client';
+  // load history subcollection if exists else show remarks
+  let historyHtml = '<h4>Call History</h4>';
+  if(obj.history && obj.history.length){
+    historyHtml += '<div>';
+    obj.history.slice().reverse().forEach(h=>{ historyHtml += `<div class="small">${new Date(h.ts.seconds*1000).toLocaleString()} — <strong>${escapeHtml(h.user)}</strong>: ${escapeHtml(h.note)} [${h.status}]</div>`; });
+    historyHtml += '</div>';
+  } else historyHtml += '<div class="small">No history yet</div>';
+  // detail body
+  modalBody.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+      <div><strong>Mobile:</strong> ${escapeHtml(obj.mobile||'')}</div>
+      <div><strong>Company:</strong> ${escapeHtml(obj.company||'')}</div>
+      <div style="margin-left:auto"><strong>Status:</strong> ${createStatusTag(obj.status||'')}</div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:8px">
+      <button class="btn" onclick="recordOutcome('${id}','interested')">Interested</button>
+      <button class="btn" onclick="recordOutcome('${id}','not-interested')">Not Interested</button>
+      <button class="btn" onclick="recordOutcome('${id}','call-later')">Call Later</button>
+      <button class="btn" onclick="recordOutcome('${id}','wrong-number')">Wrong Number</button>
+    </div>
+    <div style="margin-bottom:8px"><strong>Assign to staff:</strong> <select id="assignStaffModal"></select> <button class="btn" onclick="assignStaff('${id}')">Assign</button></div>
+    <div style="margin-bottom:8px"><strong>Notes / Add Remark</strong><br/><textarea id="addNote" style="width:100%;min-height:80px"></textarea><br/><button class="btn" onclick="addRemark('${id}')">Save Remark</button></div>
+    ${historyHtml}
+  `;
+  // fill assign dropdown
+  const snap = await getDocs(collection(db,'users'));
+  const sel = document.getElementById('assignStaffModal');
+  sel.innerHTML = '<option value="">(none)</option>';
+  snap.docs.forEach(u=>{ const data = u.data(); const opt = document.createElement('option'); opt.value = data.uid; opt.text = data.email; sel.appendChild(opt); });
+  modal.classList.remove('hidden');
+}
+
+// add remark
+async function addRemark(id){
+  const note = document.getElementById('addNote').value.trim();
+  if(!note) return alert('Enter remark');
+  const u = currentUser ? currentUser.email : 'unknown';
+  const ref = doc(db,'clients',id);
+  // push into history array
+  await updateDoc(ref, { history: ( (await getDoc(ref)).data().history || [] ).concat([{ ts: serverTimestamp(), user: u, note: note, status: (await getDoc(ref)).data().status || '' }]) });
+  alert('Saved remark');
+  document.getElementById('addNote').value='';
+  // refresh modal
+  openDetail(id);
+}
+
+// assign staff
+async function assignStaff(id){
+  const sel = document.getElementById('assignStaffModal');
+  const uid = sel.value;
+  const em = sel.options[sel.selectedIndex].text || '';
+  await updateDoc(doc(db,'clients',id), { assignedTo: uid, assignedToEmail: em });
+  alert('Assigned');
+  openDetail(id);
+}
+
+// record outcome buttons simplified
+async function recordOutcome(id, outcome){
+  let status = '';
+  if(outcome==='interested') status = 'registered';
+  else if(outcome==='not-interested') status = 'noti';
+  else if(outcome==='call-later') status = 'future';
+  else status = 'noti';
+  const u = currentUser ? currentUser.email : 'unknown';
+  const ref = doc(db,'clients',id);
+  const snap = await getDoc(ref);
+  const prev = snap.exists() ? snap.data() : {};
+  const hist = prev.history || [];
+  hist.push({ ts: serverTimestamp(), user: u, note: `Outcome: ${outcome}`, status });
+  await updateDoc(ref, { status, history: hist, assignedTo: prev.assignedTo || currentUser.uid, assignedToEmail: prev.assignedToEmail || currentUser.email });
+  alert('Outcome recorded: '+status);
+  openDetail(id);
+}
+
+// quick status from table
+async function quickStatus(id, st){
+  await updateDoc(doc(db,'clients',id), { status: st });
+  alert('Status updated');
+}
+
+// remove client
+async function removeClient(id){
+  if(!confirm('Delete this client?')) return;
+  await deleteDoc(doc(db,'clients',id));
+  alert('Deleted');
+}
+
+// save client (add or update)
+saveBtn.addEventListener('click', async ()=>{
+  const payload = {
+    name: nameEl.value.trim(),
+    company: companyEl.value.trim(),
+    mobile: mobileEl.value.trim(),
+    city: cityEl.value.trim(),
+    state: stateEl.value.trim(),
+    date: followEl.value || '',
+    status: statusSelect.value,
+    assignedTo: assignSelect.value || '',
+    assignedToEmail: assignSelect.options[assignSelect.selectedIndex] ? assignSelect.options[assignSelect.selectedIndex].text : '',
+    createdAt: serverTimestamp()
+  };
+  if(!payload.name || !payload.mobile) return alert('Name and mobile required');
+  if(editingId){
+    await updateDoc(doc(db,'clients',editingId), payload);
+    alert('Updated');
+    editingId = null;
+    document.getElementById('addTitle').innerText = 'Add Client';
+  } else {
+    const res = await addDoc(collection(db,'clients'), payload);
+    // create initial history note if note provided
+    if(noteEl.value.trim()){
+      await updateDoc(doc(db,'clients',res.id), { history: [{ ts: serverTimestamp(), user: currentUser ? currentUser.email : 'system', note: noteEl.value.trim(), status: payload.status }] });
+    }
+    alert('Saved');
+  }
+  // clear form
+  nameEl.value=''; companyEl.value=''; mobileEl.value=''; cityEl.value=''; stateEl.value=''; followEl.value=''; noteEl.value=''; statusSelect.value='today'; assignSelect.value='';
+  // go to list
+  loadList(currentPage);
+});
+
+clearBtn.addEventListener('click', ()=>{ nameEl.value=''; companyEl.value=''; mobileEl.value=''; cityEl.value=''; stateEl.value=''; followEl.value=''; noteEl.value=''; statusSelect.value='today'; assignSelect.value=''; editingId=null; document.getElementById('addTitle').innerText='Add Client'; });
+
+// quick add
+q_save.addEventListener('click', async ()=>{
+  const name = q_name.value.trim(), mobile = q_mobile.value.trim();
+  if(!name||!mobile) return alert('Name & mobile required');
+  await addDoc(collection(db,'clients'), { name, mobile, status: q_status.value, createdAt: serverTimestamp(), createdBy: currentUser?currentUser.uid:'', assignedTo: currentUser?currentUser.uid:'' , assignedToEmail: currentUser?currentUser.email:'' });
+  q_name.value=''; q_mobile.value=''; q_status.value='today';
+  alert('Added');
+  loadList(currentPage);
+});
+
+// import csv (basic)
+importBtn.addEventListener('click', ()=>{
+  const f = csvIn.files[0]; if(!f) return alert('Choose file');
+  const reader = new FileReader(); reader.onload = async (e)=>{
+    const lines = e.target.result.split('\n').map(s=>s.trim()).filter(Boolean); if(lines.length<2) return alert('CSV needs header+rows');
+    for(let i=1;i<lines.length;i++){
+      const cols = lines[i].split(',').map(c=>c.replace(/^"|"$/g,''));
+      await addDoc(collection(db,'clients'), { name: cols[0]||'', company: cols[1]||'', mobile: cols[2]||'', city: cols[3]||'', state: cols[4]||'', date: cols[5]||'', status: cols[6]||'today', history: cols[7]?[{ ts: serverTimestamp(), user: 'import', note: cols[7], status: cols[6]||'today' }]:[] , createdAt: serverTimestamp() });
+    }
+    alert('Imported');
+    loadList(currentPage);
+  }; reader.readAsText(f);
+});
+
+// export CSV helpers
+function downloadCsv(filename, rows){
+  const csv = rows.map(r=>`"${(r.name||'')}","${(r.company||'')}","${(r.mobile||'')}","${(r.city||'')}","${(r.state||'')}","${(r.date||'')}","${(r.status||'')}","${(r.history && r.history.length? r.history.map(h=>h.note).join(';') : '')}"`).join('\n');
+  const a = document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('Name,Company,Mobile,City,State,FollowDate,Status,Remarks\n'+csv); a.download=filename; a.click();
+}
+
+exportAll.addEventListener('click', async ()=>{ const snap = await getDocs(collection(db,'clients')); const rows = snap.docs.map(d=>d.data()); downloadCsv('all_clients.csv', rows); });
+exportToday.addEventListener('click', async ()=>{ const snap = await getDocs(query(collection(db,'clients'), where('status','==','today'))); const rows= snap.docs.map(d=>d.data()); downloadCsv('today_clients.csv', rows); });
+
+// create staff (invite record)
+createStaff.addEventListener('click', async ()=>{
+  const e = staffEmail.value.trim(), p = staffPass.value.trim();
+  if(!e||!p) return alert('Enter email & password');
+  // store invite and create user doc; actual auth account created when user signs up
+  await addDoc(collection(db,'invites'), { email:e, role:'staff', createdAt: serverTimestamp(), createdBy: currentUser?currentUser.uid:'' });
+  await addDoc(collection(db,'users'), { email:e, role:'staff', uid:'pending-'+Date.now() });
+  alert('Invite recorded. Ask staff to sign up using that email and password.');
+  staffEmail.value=''; staffPass.value='';
+  fillAssigns();
+});
+
+// search
+search.addEventListener('input', ()=>{ const q = search.value.trim().toLowerCase(); if(!q) return loadList(currentPage); (async ()=>{ const snap = await getDocs(collection(db,'clients')); const items = snap.docs.map(d=>({id:d.id,...d.data()})).filter(c=> (c.name||'').toLowerCase().includes(q) || (c.mobile||'').includes(q)); clientsBody.innerHTML = items.map(renderRow).join('') || '<tr><td colspan="9">No records</td></tr>'; })(); });
+
+// helper escape
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// modal functions
+function closeModal(){ modal.classList.add('hidden'); modalBody.innerHTML=''; }
+window.closeModal = closeModal;
+
+// initial actions
+loadKpis(); loadRecent();
+
+// export the navigate for onclick from HTML
+window.navigate = navigate;
+window.openDetail = openDetail;
+window.quickStatus = quickStatus;
+window.removeClient = removeClient;
+
+</script>
+</body>
+</html>
